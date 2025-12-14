@@ -165,8 +165,31 @@
           </div>
           
           <div class="coupon-section mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">Apply Coupon</h6>
+              <button class="btn btn-link btn-sm p-0" (click)="showCoupons = !showCoupons" *ngIf="availableCoupons.length > 0">
+                {{showCoupons ? 'Hide' : 'View'}} Available Coupons
+              </button>
+            </div>
+            
+            <div *ngIf="showCoupons && availableCoupons.length > 0" class="available-coupons mb-3">
+              <div *ngFor="let coupon of availableCoupons" class="coupon-card mb-2 p-2 border rounded" (click)="selectCoupon(coupon.code)" style="cursor: pointer;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong class="text-primary">{{coupon.code}}</strong>
+                    <small class="text-muted d-block">{{coupon.description}}</small>
+                    <small class="text-success">Min order: ₹{{coupon.minOrderAmount}}</small>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge bg-success" *ngIf="coupon.discountType === 'PERCENTAGE'">{{coupon.discountValue}}% OFF</span>
+                    <span class="badge bg-success" *ngIf="coupon.discountType === 'FIXED'">₹{{coupon.discountValue}} OFF</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             <div class="input-group">
-              <input type="text" class="form-control" placeholder="Try: SAVE10, WELCOME20, BIGDEAL" [(ngModel)]="couponCode" [disabled]="couponApplied">
+              <input type="text" class="form-control" placeholder="Enter coupon code" [(ngModel)]="couponCode" [disabled]="couponApplied">
               <button class="btn btn-outline-secondary" type="button" (click)="applyCoupon()" *ngIf="!couponApplied" [disabled]="!couponCode.trim()">Apply</button>
               <button class="btn btn-outline-danger" type="button" (click)="removeCoupon()" *ngIf="couponApplied">Remove</button>
             </div>

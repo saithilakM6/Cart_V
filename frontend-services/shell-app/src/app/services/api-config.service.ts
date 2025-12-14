@@ -1,4 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, InjectionToken } from '@angular/core';
+
+export const API_URL = new InjectionToken<string>('API_URL');
 
 @Injectable({
   providedIn: 'root'
@@ -6,16 +8,12 @@ import { Injectable } from '@angular/core';
 export class ApiConfigService {
   private apiBaseUrl: string;
 
-  constructor() {
-    this.apiBaseUrl = this.getApiBaseUrl();
-  }
-
-  private getApiBaseUrl(): string {
-    return '';
+  constructor(@Inject(API_URL) private apiUrl: string) {
+    this.apiBaseUrl = this.apiUrl;
   }
 
   getApiUrl(endpoint: string): string {
-    return `/api/${endpoint}`;
+    return `${this.apiBaseUrl}/api/${endpoint}`;
   }
 
   getBaseUrl(): string {

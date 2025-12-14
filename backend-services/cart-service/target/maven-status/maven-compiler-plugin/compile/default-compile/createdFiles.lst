@@ -1,6 +1,9 @@
 com\revcart\cart\entity\CartItem.class
+com\revcart\cart\entity\Coupon.class
 com\revcart\cart\service\CartService.class
 com\revcart\cart\controller\CartController.class
+com\revcart\cart\controller\CouponController.class
+com\revcart\cart\repository\CouponRepository.class
 com\revcart\cart\repository\CartItemRepository.class
 com\revcart\cart\entity\Wishlist.class
 com\revcart\cart\repository\WishlistRepository.class
@@ -8,6 +11,7 @@ com\revcart\cart\controller\WishlistController.class
 com\revcart\cart\config\RestTemplateConfig.class
 com\revcart\cart\dto\CartItemRequest.class
 com\revcart\cart\repository\CartRepository.class
+com\revcart\cart\entity\Coupon$DiscountType.class
 com\revcart\cart\exception\GlobalExceptionHandler.class
 com\revcart\cart\CartServiceApplication.class
 com\revcart\cart\entity\Cart.class

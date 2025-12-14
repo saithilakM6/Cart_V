@@ -33,12 +33,28 @@ export class WishlistService {
   }
 
   loadWishlist(): void {
+    // Load from localStorage as fallback
+    const savedWishlist = localStorage.getItem('wishlist');
+    if (savedWishlist) {
+      try {
+        const parsed = JSON.parse(savedWishlist);
+        this.wishlistItems.next(parsed);
+      } catch (e) {
+        localStorage.removeItem('wishlist');
+        this.wishlistItems.next([]);
+      }
+    }
+
+    // Try to load from server
     const userId = this.getUserId();
     this.http.get<any>(`${this.apiUrl}/${userId}`).subscribe({
       next: (response) => {
         this.wishlistItems.next(response.productIds || []);
       },
-      error: (error) => console.error('Error loading wishlist:', error)
+      error: (error) => {
+        console.error('Error loading wishlist:', error);
+        // Keep local wishlist if server fails
+      }
     });
   }
 
@@ -49,9 +65,27 @@ export class WishlistService {
       next: () => {
         this.loadWishlist();
         this.showNotification('Added to wishlist!');
+      },
+      error: () => {
+        // Fallback to local storage
+        this.addToLocalWishlist(productId);
+        this.showNotification('Added to wishlist!');
       }
     });
     return request;
+  }
+
+  private addToLocalWishlist(productId: number): void {
+    const currentItems = [...this.wishlistItems.value];
+    if (!currentItems.find(item => item.id === productId)) {
+      currentItems.push({ id: productId });
+      this.updateLocalWishlist(currentItems);
+    }
+  }
+
+  private updateLocalWishlist(items: any[]): void {
+    this.wishlistItems.next(items);
+    localStorage.setItem('wishlist', JSON.stringify(items));
   }
 
   showNotification(message: string): void {
@@ -61,7 +95,16 @@ export class WishlistService {
 
   removeFromWishlist(productId: number): Observable<any> {
     const userId = this.getUserId();
-    return this.http.delete(`${this.apiUrl}/${userId}/remove/${productId}`);
+    const request = this.http.delete(`${this.apiUrl}/${userId}/remove/${productId}`);
+    request.subscribe({
+      next: () => this.loadWishlist(),
+      error: () => {
+        // Fallback to local storage
+        const currentItems = this.wishlistItems.value.filter(item => item.id !== productId);
+        this.updateLocalWishlist(currentItems);
+      }
+    });
+    return request;
   }
 
   isInWishlist(productId: number): boolean {

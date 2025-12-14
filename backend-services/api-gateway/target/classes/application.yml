@@ -14,7 +14,7 @@ spring:
           predicates:
             - Path=/api/products/**
         - id: coupon-service
-          uri: http://order-service:8084
+          uri: http://cart-service:8083
           predicates:
             - Path=/api/coupons/**
         - id: user-service

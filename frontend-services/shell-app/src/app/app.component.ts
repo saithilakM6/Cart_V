@@ -1,15 +1,18 @@
 import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { HeaderComponent } from './components/header/header.component';
+import { FooterComponent } from './components/footer/footer.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    <div>
-      <h1>RevCart E-commerce</h1>
-      <p>Minimal app - NO routing, NO services, NO dependencies</p>
-      <p>If you see this, Angular is working!</p>
-    </div>
+    <app-header></app-header>
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+    <app-footer></app-footer>
   `
 })
 export class AppComponent {

@@ -76,15 +76,8 @@ export class CartService {
       },
       error: (error) => {
         console.error('Error adding to cart:', error);
-        console.error('Error details:', error.error);
-        console.error('Error status:', error.status);
-        if (error.status === 401) {
-          alert('Session expired. Please login again.');
-        } else if (error.status === 0) {
-          alert('Network error. Please check if the server is running.');
-        } else {
-          alert('Failed to add item to cart. Please try again.');
-        }
+        // Fallback to local cart when backend is down
+        this.addToLocalCart(product, quantity);
       }
     });
   }

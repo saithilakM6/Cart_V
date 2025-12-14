@@ -45,6 +45,8 @@ export class CheckoutComponent implements OnInit {
   couponDiscount = 0;
   couponApplied = false;
   couponMessage = '';
+  availableCoupons: any[] = [];
+  showCoupons = false;
 
   constructor(
     private cartService: CartService,
@@ -70,6 +72,25 @@ export class CheckoutComponent implements OnInit {
         }
       }
     });
+    
+    this.loadAvailableCoupons();
+  }
+  
+  loadAvailableCoupons() {
+    this.couponService.getAllCoupons().subscribe({
+      next: (coupons) => {
+        this.availableCoupons = coupons;
+      },
+      error: (error) => {
+        console.error('Error loading coupons:', error);
+      }
+    });
+  }
+  
+  selectCoupon(couponCode: string) {
+    this.couponCode = couponCode;
+    this.showCoupons = false;
+    this.applyCoupon();
   }
 
   calculateTotals() {
