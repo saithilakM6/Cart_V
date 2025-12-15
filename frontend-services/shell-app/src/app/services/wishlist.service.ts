@@ -13,9 +13,12 @@ export class WishlistService {
   public wishlistItems$ = this.wishlistItems.asObservable();
   private notificationSubject = new BehaviorSubject<{show: boolean, message: string}>({show: false, message: ''});
   public notification$ = this.notificationSubject.asObservable();
+  public initialized = false;
+  private processingIds = new Set<number>();
 
   constructor(private http: HttpClient, private authService: AuthService, private apiConfig: ApiConfigService) {
     this.apiUrl = this.apiConfig.getApiUrl('wishlist');
+    console.log('WishlistService initialized - localStorage only mode');
     this.loadWishlist();
   }
 
@@ -33,59 +36,98 @@ export class WishlistService {
   }
 
   loadWishlist(): void {
-    // Load from localStorage as fallback
+    if (this.initialized) {
+      console.log('Wishlist already initialized, skipping...');
+      return;
+    }
+    
+    console.log('Loading wishlist...');
+    
+    // Load from localStorage
     const savedWishlist = localStorage.getItem('wishlist');
+    console.log('Raw localStorage data:', savedWishlist);
+    
     if (savedWishlist) {
       try {
         const parsed = JSON.parse(savedWishlist);
-        this.wishlistItems.next(parsed);
+        console.log('Parsed localStorage data:', parsed);
+        // Ensure all items are valid numbers and remove duplicates
+        const cleanedIds = [...new Set(parsed.filter((item: any) => {
+          const num = Number(item);
+          return !isNaN(num) && num > 0 && Number.isInteger(num);
+        }).map((item: any) => Number(item)))];
+        console.log('Cleaned IDs:', cleanedIds);
+        this.wishlistItems.next(cleanedIds);
       } catch (e) {
+        console.error('Error parsing localStorage:', e);
         localStorage.removeItem('wishlist');
         this.wishlistItems.next([]);
       }
+    } else {
+      console.log('No localStorage data found');
+      this.wishlistItems.next([]);
     }
-
-    // Try to load from server
-    const userId = this.getUserId();
-    this.http.get<any>(`${this.apiUrl}/${userId}`).subscribe({
-      next: (response) => {
-        this.wishlistItems.next(response.productIds || []);
-      },
-      error: (error) => {
-        console.error('Error loading wishlist:', error);
-        // Keep local wishlist if server fails
-      }
-    });
+    
+    this.initialized = true;
   }
 
   addToWishlist(productId: number): Observable<any> {
-    const userId = this.getUserId();
-    const request = this.http.post(`${this.apiUrl}/${userId}/add/${productId}`, {});
-    request.subscribe({
-      next: () => {
-        this.loadWishlist();
-        this.showNotification('Added to wishlist!');
-      },
-      error: () => {
-        // Fallback to local storage
-        this.addToLocalWishlist(productId);
-        this.showNotification('Added to wishlist!');
-      }
+    console.log('Adding to wishlist:', productId, typeof productId);
+    
+    // Convert to number and validate
+    const id = Number(productId);
+    if (isNaN(id) || id <= 0) {
+      console.error('Invalid product ID:', productId);
+      return new Observable(observer => {
+        observer.error('Invalid product ID');
+      });
+    }
+    
+    // Prevent duplicate processing
+    if (this.processingIds.has(id)) {
+      console.log('Already processing this ID:', id);
+      return new Observable(observer => {
+        observer.next({ success: true });
+        observer.complete();
+      });
+    }
+    
+    this.processingIds.add(id);
+    
+    // Add to local storage
+    this.addToLocalWishlist(id);
+    this.showNotification('Added to wishlist!');
+    
+    // Clear processing flag after a short delay
+    setTimeout(() => this.processingIds.delete(id), 500);
+    
+    // Return success observable
+    return new Observable(observer => {
+      observer.next({ success: true });
+      observer.complete();
     });
-    return request;
   }
 
   private addToLocalWishlist(productId: number): void {
+    console.log('Adding to local wishlist:', productId);
     const currentItems = [...this.wishlistItems.value];
-    if (!currentItems.find(item => item.id === productId)) {
-      currentItems.push({ id: productId });
+    console.log('Current items before add:', currentItems);
+    
+    // Check if item already exists using strict comparison
+    if (!currentItems.includes(productId)) {
+      currentItems.push(productId);
+      console.log('Updated items after add:', currentItems);
       this.updateLocalWishlist(currentItems);
+    } else {
+      console.log('Item already exists in wishlist');
     }
   }
 
   private updateLocalWishlist(items: any[]): void {
+    console.log('Updating local wishlist with:', items);
     this.wishlistItems.next(items);
     localStorage.setItem('wishlist', JSON.stringify(items));
+    console.log('localStorage updated');
   }
 
   showNotification(message: string): void {
@@ -94,21 +136,21 @@ export class WishlistService {
   }
 
   removeFromWishlist(productId: number): Observable<any> {
-    const userId = this.getUserId();
-    const request = this.http.delete(`${this.apiUrl}/${userId}/remove/${productId}`);
-    request.subscribe({
-      next: () => this.loadWishlist(),
-      error: () => {
-        // Fallback to local storage
-        const currentItems = this.wishlistItems.value.filter(item => item.id !== productId);
-        this.updateLocalWishlist(currentItems);
-      }
+    console.log('Removing from wishlist:', productId);
+    
+    // Remove from local storage
+    const currentItems = this.wishlistItems.value.filter((item: any) => Number(item) !== Number(productId));
+    this.updateLocalWishlist(currentItems);
+    
+    // Return success observable
+    return new Observable(observer => {
+      observer.next({ success: true });
+      observer.complete();
     });
-    return request;
   }
 
   isInWishlist(productId: number): boolean {
-    return this.wishlistItems.value.some(item => item.id === productId);
+    return this.wishlistItems.value.some((item: any) => Number(item) === Number(productId));
   }
 
   getWishlistCount(): number {

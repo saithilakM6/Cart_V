@@ -10,7 +10,7 @@ export class DeliveryService {
   private apiUrl: string;
 
   constructor(private http: HttpClient, private apiConfig: ApiConfigService) {
-    this.apiUrl = 'http://localhost:8086/api/delivery-agent';
+    this.apiUrl = this.apiConfig.getApiUrl('delivery-agent');
   }
 
   agentRegister(email: string, password: string, name: string, phone: string): Observable<any> {

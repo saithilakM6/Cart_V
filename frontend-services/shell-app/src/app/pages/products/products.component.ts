@@ -93,19 +93,10 @@ export class ProductsComponent implements OnInit {
   }
 
   toggleWishlist(product: any): void {
-    if (!this.authService.isAuthenticated()) {
-      alert('Please login to add items to wishlist');
-      return;
-    }
-    
     if (this.wishlistService.isInWishlist(product.id)) {
-      this.wishlistService.removeFromWishlist(product.id).subscribe({
-        next: () => this.wishlistService.loadWishlist()
-      });
+      this.wishlistService.removeFromWishlist(product.id).subscribe();
     } else {
-      this.wishlistService.addToWishlist(product.id).subscribe({
-        next: () => this.wishlistService.loadWishlist()
-      });
+      this.wishlistService.addToWishlist(product.id).subscribe();
     }
   }
 }
